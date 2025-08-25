@@ -5,12 +5,7 @@ import math
 import msgpack
 
 import socket
-import json
-
 import numpy as np
-
-import os
-#import subprocess
 
 filename = 'pos.txt'
 with open(filename, 'w') as f:
