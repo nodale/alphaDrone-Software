@@ -14,7 +14,7 @@ int main() {
     int iterations = 1000;
     int i = 0;
     nvblox::Mapper mapper(voxel_size);
-    for(auto& frame_set : realsense_loader){
+    for(auto&& frame_set : realsense_loader){
         auto transform = frame_set.getTransform();
         drone::integrateDepth(mapper, frame_set.getDepthFrame(), {transform}, nvblox_depth_camera);
         drone::integrateColor(mapper, frame_set.getColorFrame(), {transform}, nvblox_depth_camera);

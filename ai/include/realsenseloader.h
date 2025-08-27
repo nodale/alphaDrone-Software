@@ -1,4 +1,5 @@
 #pragma once
+#include "librealsense2/h/rs_sensor.h"
 #include "nvblox/sensors/camera.h"
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
@@ -40,7 +41,7 @@ struct RealSenseFrameSet {
 };
 
 void integrateDepth(nvblox::Mapper &mapper, const rs2::depth_frame &depth_frame,
-                   nvblox::Transform T_L_C, const nvblox::Camera &camera);
+                    nvblox::Transform T_L_C, const nvblox::Camera &camera);
 void integrateColor(nvblox::Mapper &mapper, const rs2::frame &color_frame,
                     nvblox::Transform T_L_C, const nvblox::Camera &camera);
 
@@ -49,11 +50,10 @@ public:
   RealSenseLoader() : pipe_() {
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_DEPTH, RS2_FORMAT_Z16);
-    cfg.enable_stream(RS2_STREAM_COLOR, RS2_FORMAT_RGB8);
-    cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
+    cfg.enable_stream(RS2_STREAM_COLOR, RS2_FORMAT_BGR8);
     pipe_.start(cfg);
   };
-  ~RealSenseLoader();
+  ~RealSenseLoader() { pipe_.stop(); };
 
   CameraIntrinsics getDepthIntrinsics() {
     auto profile = pipe_.get_active_profile();
@@ -73,16 +73,18 @@ public:
             intrin.ppy, intrin.width, intrin.height};
   }
 
-  RealSenseFrameSet loadImage() { return {pipe_.wait_for_frames()}; }
+  RealSenseFrameSet loadImage() {
+    return RealSenseFrameSet(pipe_.wait_for_frames());
+  }
 
   // iterator stuff
   struct iterator {
     RealSenseLoader *loader;
-    RealSenseFrameSet current_frame;
     bool operator!=(const iterator &other) const { return true; }
-    void operator++() { current_frame = loader->loadImage(); }
-    RealSenseFrameSet& operator*() { return current_frame; }
-    iterator(RealSenseLoader *loader) : loader(loader) {}
+    void operator++() { }
+    RealSenseFrameSet operator*() { return loader->loadImage(); }
+    iterator(RealSenseLoader *loader) : loader(loader) {
+    }
   };
 
   iterator begin() { return iterator(this); }
