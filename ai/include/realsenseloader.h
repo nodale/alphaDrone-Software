@@ -3,6 +3,7 @@
 #include "nvblox/sensors/camera.h"
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
+#include <generator>
 #include <librealsense2/rs.hpp>
 #include <nvblox/nvblox.h>
 #include <stdexcept>
@@ -77,19 +78,12 @@ public:
     return RealSenseFrameSet(pipe_.wait_for_frames());
   }
 
-  // iterator stuff
-  struct iterator {
-    RealSenseLoader *loader;
-    bool operator!=(const iterator &other) const { return true; }
-    void operator++() { }
-    RealSenseFrameSet operator*() { return loader->loadImage(); }
-    iterator(RealSenseLoader *loader) : loader(loader) {
-    }
-  };
-
-  iterator begin() { return iterator(this); }
-  iterator end() { return iterator(nullptr); }
-
+  std::generator<RealSenseFrameSet> streamFrames() {
+      rs2::frameset frameset;
+      while((frameset = pipe_.wait_for_frames())){
+          co_yield RealSenseFrameSet(frameset);
+      }
+  }
 private:
   rs2::pipeline pipe_;
   rs2::frameset frameset_;
