@@ -20,7 +20,7 @@ public:
   SingleProducerConsumerQueue(size_t len)
       : storage_provider_(std::bit_ceil(len)) {};
 
-  bool enqueu(T &&item) {
+  bool enqueue(T &&item) {
     size_t current_tail = tail_.load(std::memory_order_relaxed);
     size_t next_tail = (current_tail + 1) & (storage_provider_.capacity() - 1);
     if (next_tail == head_.load(std::memory_order_acquire))

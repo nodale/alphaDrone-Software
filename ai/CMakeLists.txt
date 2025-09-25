@@ -5,7 +5,6 @@ project(drone LANGUAGES CXX CUDA)
 set(CMAKE_BUILD_TYPE DEBUG)
 
 set(CMAKE_CXX_STANDARD 23)
-add_compile_options(-fcoroutines)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "Minimum CMake policy version")
@@ -17,11 +16,15 @@ set(CMAKE_CUDA_ARCHITECTURES 87 CACHE STRING "CUDA architectures")
 set(BUILD_PYTORCH_WRAPPER OFF CACHE BOOL "Disable PyTorch wrapper")
 set(BUILD_TESTING OFF CACHE BOOL "Disable testing")
 set(USE_SYSTEM_GFLAGS ON CACHE BOOL "Use system gflags")
+set(ENABLE_ROS OFF CACHE BOOL "Disable ROS")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-include(realsense)
-include(nvblox)
+find_package(realsense2 QUIET)
+if(NOT realSense2_FOUND)
+    include(realsense)
+endif()
 
+include(nvblox)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 file(GLOB_RECURSE HEADERS
     ${CMAKE_SOURCE_DIR}/include/*.h)

@@ -1,8 +1,9 @@
 
-#include "nvblox/io/mesh_io.h"
 #include "realsenseloader.h"
+#include "imu.h"
 #include <librealsense2/rs.h>
 #include <nvblox/nvblox.h>
+#include <iostream>
 
 int main() {
   drone::RealSenseLoader realsense_loader;
@@ -17,20 +18,21 @@ int main() {
       color_intrinsics.fu, color_intrinsics.fv, color_intrinsics.cu,
       color_intrinsics.cv, color_intrinsics.width, color_intrinsics.height);
   float voxel_size = 0.05f;
-  int iterations = 1000;
+  int iterations = 10;
   int i = 0;
-  nvblox::Mapper mapper(voxel_size);
-  for (auto &&frame_set : realsense_loader.streamFrames()) {
-    auto transform = frame_set.getTransform();
-    drone::integrateDepth(mapper, frame_set.getDepthFrame(), {transform},
-                          nvblox_depth_camera);
-    drone::integrateColor(mapper, frame_set.getColorFrame(), {transform},
-                          nvblox_depth_camera);
-    mapper.updateColorMesh();
+  drone::ImuPoseEstimator<> imu_pose_estimator;
+  auto calibration_frame = realsense_loader.loadImage();
+  for (auto &frame_set : realsense_loader) {
+    auto gyro = frame_set.getGyro();
+    auto accel = frame_set.getAccel();
+    std::cout << "Accel:" << accel.first << "\n";
+    imu_pose_estimator.updateMotion(gyro, accel);
+    auto T_L_C = imu_pose_estimator.getPose();
+    std::cout << "Current Pose: \n"
+              << T_L_C.matrix() << std::endl;
     if (++i >= iterations)
       break;
   }
-  nvblox::io::outputColorMeshLayerToPly(mapper.color_mesh_layer(),
-                                        "color_mesh.ply");
+
   return 0;
 }
